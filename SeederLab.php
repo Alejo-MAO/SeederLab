@@ -1,63 +1,51 @@
 <?php
-declare(strict_types=1);
-
-/**
- * SeederLab
- * Generador semántico, extensible y reproducible de datos para MySQL.
- * - Determinismo (setSeed)
- * - Unicidad garantizada para índices UNIQUE
- * - Batching + transacciones
- * - Carga de catálogos (JSON)
- * - Hooks y reglas por campo / table.field
- * - Modo dry-run con handler
- */
 class SeederLab
 {
   private \PDO $pdo;
-  private string $dbName;
-  private array $customRulesField = [];
-  private array $customRulesTableField = [];
-  private array $config = [];
-  private array $hooks = [];
+  private $dbName;
+  private $customRulesField = [];
+  private $customRulesTableField = [];
+  private $config = [];
+  private $hooks = [];
   private int $seed = 0;
   private int $batchSize = 500;
 
-  private bool $dryRun = false;
+  private $dryRun = false;
   private $dryRunHandler = null;
 
-  private array $firstNames = ["Carlos","María","José","Ana","Luis","Valentina","Pedro","Sofía","Andrés","Camila","Miguel","Isabella","Juan","Gabriela","Fernando","Lucía","Diego","Paola","Ricardo","Daniela","Sebastián","Alejandra","Manuel","Patricia","Jorge","Rosa","Héctor","Mónica","Ángel","Verónica","Esteban","Carolina","Martín","Julieta","Raúl","Adriana","Felipe","Claudia","Gustavo","Lorena","Alberto","Marisol","Cristian","Beatriz","Hernán","Natalia","Oscar","Marina","Pablo","Elena"];
-  private array $lastNames = ["García","Rodríguez","Martínez","Hernández","López","González","Pérez","Fernández","Torres","Ramírez","Castro","Morales","Vargas","Jiménez","Silva","Rojas","Mendoza","Ortega","Delgado","Guerrero","Cordero","Suárez","Reyes","Campos","Navarro","Peña","Cabrera","Salazar","Aguilar","Soto","Vega","Fuentes","Bravo","Pacheco","Acosta","Mejía","Palacios","Villanueva","Montoya","Escobar","Valencia","Carrillo","Arrieta","Domínguez","Quiroz","Rivera","Santana","Medina","Solís","Bermúdez"];
+  private $firstNames = ["Carlos","María","José","Ana","Luis","Valentina","Pedro","Sofía","Andrés","Camila","Miguel","Isabella","Juan","Gabriela","Fernando","Lucía","Diego","Paola","Ricardo","Daniela","Sebastián","Alejandra","Manuel","Patricia","Jorge","Rosa","Héctor","Mónica","Ángel","Verónica","Esteban","Carolina","Martín","Julieta","Raúl","Adriana","Felipe","Claudia","Gustavo","Lorena","Alberto","Marisol","Cristian","Beatriz","Hernán","Natalia","Oscar","Marina","Pablo","Elena"];
+  private $lastNames = ["García","Rodríguez","Martínez","Hernández","López","González","Pérez","Fernández","Torres","Ramírez","Castro","Morales","Vargas","Jiménez","Silva","Rojas","Mendoza","Ortega","Delgado","Guerrero","Cordero","Suárez","Reyes","Campos","Navarro","Peña","Cabrera","Salazar","Aguilar","Soto","Vega","Fuentes","Bravo","Pacheco","Acosta","Mejía","Palacios","Villanueva","Montoya","Escobar","Valencia","Carrillo","Arrieta","Domínguez","Quiroz","Rivera","Santana","Medina","Solís","Bermúdez"];
 
-  private array $companyPrefixes = ["Tech","Global","Innova","Next","Data","Smart","Prime","Future","Cloud","Digital","Green","Blue","Red","Quantum","Vision","Creative","Dynamic","Elite","Nova","Hyper","Apex","Vertex","Core","Bright","Summit","Pioneer","Fusion","Matrix","Orbit","Pulse"];
-  private array $companySuffixes = ["Corp","Solutions","Systems","Group","Labs","Works","Industries","Partners","Networks","Studio","Consulting","Enterprises","Holdings","Technologies","Services","International","Logistics","Media","Software","Hardware","Dynamics","Ventures","Collective","Design","Factory","Hub","Alliance","Resources","Concepts","Innovations"];
+  private $companyPrefixes = ["Tech","Global","Innova","Next","Data","Smart","Prime","Future","Cloud","Digital","Green","Blue","Red","Quantum","Vision","Creative","Dynamic","Elite","Nova","Hyper","Apex","Vertex","Core","Bright","Summit","Pioneer","Fusion","Matrix","Orbit","Pulse"];
+  private $companySuffixes = ["Corp","Solutions","Systems","Group","Labs","Works","Industries","Partners","Networks","Studio","Consulting","Enterprises","Holdings","Technologies","Services","International","Logistics","Media","Software","Hardware","Dynamics","Ventures","Collective","Design","Factory","Hub","Alliance","Resources","Concepts","Innovations"];
 
-  private array $streetTypes = ["Av.","Calle","Carrera","Boulevard","Pasaje","Camino","Vereda","Plaza","Vía","Paseo"];
-  private array $streetNames = ["Bolívar","Sucre","Libertador","Miranda","Los Próceres","Independencia","San Martín","Altamira","Chacao","La Castellana","Rojas","Urdaneta","Crespo","Rómulo"];
-  private array $zones = ["Centro","Norte","Sur","Este","Oeste","Industrial","Residencial","Comercial","Antiguo","Moderno"];
+  private $streetTypes = ["Av.","Calle","Carrera","Boulevard","Pasaje","Camino","Vereda","Plaza","Vía","Paseo"];
+  private $streetNames = ["Bolívar","Sucre","Libertador","Miranda","Los Próceres","Independencia","San Martín","Altamira","Chacao","La Castellana","Rojas","Urdaneta","Crespo","Rómulo"];
+  private $zones = ["Centro","Norte","Sur","Este","Oeste","Industrial","Residencial","Comercial","Antiguo","Moderno"];
 
-  private array $productCategories = ["Laptop","Smartphone","Tablet","Camera","Headphones","Monitor","Keyboard","Mouse","Printer","Speaker","Router","SSD","Smartwatch"];
-  private array $productModels = ["Pro","Max","Lite","Plus","Ultra","X","S","Mini","Edge","Prime","Neo","One","Z"];
+  private $productCategories = ["Laptop","Smartphone","Tablet","Camera","Headphones","Monitor","Keyboard","Mouse","Printer","Speaker","Router","SSD","Smartwatch"];
+  private $productModels = ["Pro","Max","Lite","Plus","Ultra","X","S","Mini","Edge","Prime","Neo","One","Z"];
 
-  private array $marketingAdjectives = ["Exclusive","Limited","Premium","Top-rated","Unbeatable","Special","Incredible","Amazing","Unique","Fantastic","Essential","Ultimate"];
-  private array $marketingActions = ["offer","deal","discount","promotion","sale","opportunity","bonus","package","bundle","campaign","clearance"];
-  private array $marketingBenefits = ["just for you","save big","guaranteed satisfaction","don’t miss it","best in market","limited edition","while supplies last","trusted worldwide","customer favorite","award-winning","with free shipping","with extended warranty"];
+  private $marketingAdjectives = ["Exclusive","Limited","Premium","Top-rated","Unbeatable","Special","Incredible","Amazing","Unique","Fantastic","Essential","Ultimate"];
+  private $marketingActions = ["offer","deal","discount","promotion","sale","opportunity","bonus","package","bundle","campaign","clearance"];
+  private $marketingBenefits = ["just for you","save big","guaranteed satisfaction","don’t miss it","best in market","limited edition","while supplies last","trusted worldwide","customer favorite","award-winning","with free shipping","with extended warranty"];
 
-  private array $descriptionIntros = ["This product is designed to","Our solution helps you","Experience the power to","Discover how you can","We provide tools to","Engineered to","Built to"];
-  private array $descriptionDetails = ["improve efficiency","save time","boost productivity","enhance performance","simplify tasks","increase security","reduce costs","maximize results","streamline workflows","optimize operations"];
-  private array $descriptionClosings = ["with ease.","like never before.","at an affordable price.","for everyday use.","trusted by professionals.","with guaranteed quality.","for modern needs.","with cutting-edge technology.","for small businesses and enterprises.","for seamless integration."];
+  private $descriptionIntros = ["This product is designed to","Our solution helps you","Experience the power to","Discover how you can","We provide tools to","Engineered to","Built to"];
+  private $descriptionDetails = ["improve efficiency","save time","boost productivity","enhance performance","simplify tasks","increase security","reduce costs","maximize results","streamline workflows","optimize operations"];
+  private $descriptionClosings = ["with ease.","like never before.","at an affordable price.","for everyday use.","trusted by professionals.","with guaranteed quality.","for modern needs.","with cutting-edge technology.","for small businesses and enterprises.","for seamless integration."];
 
-  private array $cities = ["Caracas","Valencia","Maracay","Barquisimeto","Maracaibo","Puerto Ordaz","Mérida","Barcelona","Cumaná","San Cristóbal","Trujillo","Ciudad Bolívar","Porlamar","Cabimas","Acarigua"];
-  private array $regions = ["Distrito Capital","Carabobo","Aragua","Lara","Zulia","Bolívar","Mérida","Anzoátegui","Táchira","Trujillo"];
+  private $cities = ["Caracas","Valencia","Maracay","Barquisimeto","Maracaibo","Puerto Ordaz","Mérida","Barcelona","Cumaná","San Cristóbal","Trujillo","Ciudad Bolívar","Porlamar","Cabimas","Acarigua"];
+  private $regions = ["Distrito Capital","Carabobo","Aragua","Lara","Zulia","Bolívar","Mérida","Anzoátegui","Táchira","Trujillo"];
 
-  private array $countries = ["Venezuela","Colombia","Argentina","Chile","México","España","Perú","Brasil","Uruguay","Paraguay","Ecuador","Bolivia"];
-  private array $countryCodes = ["VE","CO","AR","CL","MX","ES","PE","BR","UY","PY","EC","BO"];
+  private $countries = ["Venezuela","Colombia","Argentina","Chile","México","España","Perú","Brasil","Uruguay","Paraguay","Ecuador","Bolivia"];
+  private $countryCodes = ["VE","CO","AR","CL","MX","ES","PE","BR","UY","PY","EC","BO"];
 
-  private array $jobs = ["Developer","Designer","Manager","Analyst","Engineer","Consultant","Administrator","Architect","Product Manager","QA Engineer","Support Specialist","Data Scientist"];
-  private array $colors = ["Red","Blue","Green","Yellow","Black","White","Orange","Purple","Gray","Silver","Gold","Teal"];
-  private array $tags = ["tech","business","health","sports","education","travel","finance","food","fashion","gaming","music","science"];
-  private array $languages = ["English","Spanish","French","German","Portuguese","Italian","Dutch","Russian","Chinese","Japanese"];
+  private $jobs = ["Developer","Designer","Manager","Analyst","Engineer","Consultant","Administrator","Architect","Product Manager","QA Engineer","Support Specialist","Data Scientist"];
+  private $colors = ["Red","Blue","Green","Yellow","Black","White","Orange","Purple","Gray","Silver","Gold","Teal"];
+  private $tags = ["tech","business","health","sports","education","travel","finance","food","fashion","gaming","music","science"];
+  private $languages = ["English","Spanish","French","German","Portuguese","Italian","Dutch","Russian","Chinese","Japanese"];
 
-  public function __construct(string $dsn, string $user, string $password, string $dbName, int $batchSize = 500)
+  public function __construct(string $dsn, $user, $password, $dbName, int $batchSize = 500)
   {
     $this->pdo = new \PDO($dsn, $user, $password, [
       \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
@@ -112,7 +100,7 @@ class SeederLab
     $this->hooks[$hook][] = $fn;
   }
 
-  private function trigger(string $hook, array $ctx = []): void
+  private function trigger(string $hook, $ctx = []): void
   {
     foreach ($this->hooks[$hook] ?? [] as $h) {
       $h($ctx);
@@ -298,14 +286,14 @@ class SeederLab
     return $cols ?: [];
   }
 
-  private function valueExists(string $table, string $field, $value): bool
+  private function valueExists(string $table, $field, $value): bool
   {
     $stmt = $this->pdo->prepare("SELECT 1 FROM `$table` WHERE `$field` = :v LIMIT 1");
     $stmt->execute([':v' => $value]);
     return (bool)$stmt->fetchColumn();
   }
 
-  private function uniqueOrGenerate(string $table, string $field, callable $gen, int $tries = 10)
+  private function uniqueOrGenerate(string $table, $field, callable $gen, int $tries = 10)
   {
     for ($i = 0; $i < $tries; $i++) {
       $val = $gen();
@@ -314,7 +302,7 @@ class SeederLab
     throw new \RuntimeException("Unable to generate unique value for $table.$field after $tries tries");
   }
 
-  private function generateSmartValue(string $type, string $field, string $table = ''): mixed
+  private function generateSmartValue(string $type, $field, $table = ''): mixed
   {
     $fname = strtolower($field);
     $method = 'fake' . ucfirst($fname);
@@ -322,7 +310,7 @@ class SeederLab
     return $this->generateByType($type, $field);
   }
 
-  private function generateByType(string $type, string $field): mixed
+  private function generateByType(string $type, $field): mixed
   {
     $type = strtolower($type);
     switch (true) {
@@ -350,32 +338,32 @@ class SeederLab
   }
 
     // === Generadores dinámicos (ejemplos) ===
-  private function fakeName(): string { return $this->firstNames[array_rand($this->firstNames)]; }
-  private function fakeLastname(): string { return $this->lastNames[array_rand($this->lastNames)]; }
-  private function fakeFullname(): string { return $this->fakeName() . " " . $this->fakeLastname(); }
-  private function fakeEmail(): string { $domains = ["example.com","test.com","mail.com","demo.org","company.io"]; $local = strtolower(preg_replace('/[^a-z]/','',$this->fakeName())) . rand(10,9999); return $local . "@" . $domains[array_rand($domains)]; }
-  private function fakeUsername(): string { $parts = ["user","member","guest","dev","pro","team"]; return $parts[array_rand($parts)] . "_" . strtolower(substr(uniqid(), -6)); }
-  private function fakePhone(): string { return "+58" . (string)rand(400000000, 499999999); }
-  private function fakeCompany(): string { return $this->companyPrefixes[array_rand($this->companyPrefixes)] . " " . $this->companySuffixes[array_rand($this->companySuffixes)]; }
-  private function fakeCompanyEmail(): string { $domain = strtolower(preg_replace('/[^a-z]/','',str_replace(' ','',$this->fakeCompany()))) . ".com"; return strtolower($this->fakeName()) . "@" . $domain; }
-  private function fakeCompanyPhone(): string { return "+1" . rand(2000000000, 9999999999); }
-  private function fakeAddress(): string { return $this->streetTypes[array_rand($this->streetTypes)] . " " . $this->streetNames[array_rand($this->streetNames)] . " #" . rand(1,999) . ", " . $this->zones[array_rand($this->zones)]; }
-  private function fakeCity(): string { return $this->cities[array_rand($this->cities)] . ", " . $this->regions[array_rand($this->regions)]; }
-  private function fakeCountry(): string { $i = array_rand($this->countries); return $this->countries[$i] . " (" . $this->countryCodes[$i] . ")"; }
-  private function fakeZip(): string { return str_pad((string)rand(1000,99999), 5, "0", STR_PAD_LEFT); }
-  private function fakeProduct(): string { return $this->productCategories[array_rand($this->productCategories)] . " " . $this->productModels[array_rand($this->productModels)] . " " . rand(100,999); }
-  private function fakeMarketing(): string { return $this->marketingAdjectives[array_rand($this->marketingAdjectives)] . " " . $this->marketingActions[array_rand($this->marketingActions)] . " - " . $this->marketingBenefits[array_rand($this->marketingBenefits)]; }
-  private function fakeDescription(): string { return $this->descriptionIntros[array_rand($this->descriptionIntros)] . " " . $this->descriptionDetails[array_rand($this->descriptionDetails)] . " " . $this->descriptionClosings[array_rand($this->descriptionClosings)]; }
-  private function fakeJob(): string { return $this->jobs[array_rand($this->jobs)]; }
-  private function fakeColor(): string { return $this->colors[array_rand($this->colors)]; }
-  private function fakeTag(): string { return $this->tags[array_rand($this->tags)]; }
-  private function fakeLanguage(): string { return $this->languages[array_rand($this->languages)]; }
-  private function fakeIp(): string { return rand(1,255) . "." . rand(0,255) . "." . rand(0,255) . "." . rand(1,255); }
-  private function fakeUuid(): string { return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0x0fff)|0x4000, mt_rand(0,0x3fff)|0x8000, mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0xffff)); }
-  private function fakeCurrency(): string { $currencies = ["USD","EUR","GBP","JPY","VES","BRL","CAD","AUD"]; return $currencies[array_rand($currencies)]; }
+  private function fakeName() { return $this->firstNames[array_rand($this->firstNames)]; }
+  private function fakeLastname() { return $this->lastNames[array_rand($this->lastNames)]; }
+  private function fakeFullname() { return $this->fakeName() . " " . $this->fakeLastname(); }
+  private function fakeEmail() { $domains = ["example.com","test.com","mail.com","demo.org","company.io"]; $local = strtolower(preg_replace('/[^a-z]/','',$this->fakeName())) . rand(10,9999); return $local . "@" . $domains[array_rand($domains)]; }
+  private function fakeUsername() { $parts = ["user","member","guest","dev","pro","team"]; return $parts[array_rand($parts)] . "_" . strtolower(substr(uniqid(), -6)); }
+  private function fakePhone() { return "+58" . (string)rand(400000000, 499999999); }
+  private function fakeCompany() { return $this->companyPrefixes[array_rand($this->companyPrefixes)] . " " . $this->companySuffixes[array_rand($this->companySuffixes)]; }
+  private function fakeCompanyEmail() { $domain = strtolower(preg_replace('/[^a-z]/','',str_replace(' ','',$this->fakeCompany()))) . ".com"; return strtolower($this->fakeName()) . "@" . $domain; }
+  private function fakeCompanyPhone() { return "+1" . rand(2000000000, 9999999999); }
+  private function fakeAddress() { return $this->streetTypes[array_rand($this->streetTypes)] . " " . $this->streetNames[array_rand($this->streetNames)] . " #" . rand(1,999) . ", " . $this->zones[array_rand($this->zones)]; }
+  private function fakeCity() { return $this->cities[array_rand($this->cities)] . ", " . $this->regions[array_rand($this->regions)]; }
+  private function fakeCountry() { $i = array_rand($this->countries); return $this->countries[$i] . " (" . $this->countryCodes[$i] . ")"; }
+  private function fakeZip() { return str_pad((string)rand(1000,99999), 5, "0", STR_PAD_LEFT); }
+  private function fakeProduct() { return $this->productCategories[array_rand($this->productCategories)] . " " . $this->productModels[array_rand($this->productModels)] . " " . rand(100,999); }
+  private function fakeMarketing() { return $this->marketingAdjectives[array_rand($this->marketingAdjectives)] . " " . $this->marketingActions[array_rand($this->marketingActions)] . " - " . $this->marketingBenefits[array_rand($this->marketingBenefits)]; }
+  private function fakeDescription() { return $this->descriptionIntros[array_rand($this->descriptionIntros)] . " " . $this->descriptionDetails[array_rand($this->descriptionDetails)] . " " . $this->descriptionClosings[array_rand($this->descriptionClosings)]; }
+  private function fakeJob() { return $this->jobs[array_rand($this->jobs)]; }
+  private function fakeColor() { return $this->colors[array_rand($this->colors)]; }
+  private function fakeTag() { return $this->tags[array_rand($this->tags)]; }
+  private function fakeLanguage() { return $this->languages[array_rand($this->languages)]; }
+  private function fakeIp() { return rand(1,255) . "." . rand(0,255) . "." . rand(0,255) . "." . rand(1,255); }
+  private function fakeUuid() { return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x', mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0x0fff)|0x4000, mt_rand(0,0x3fff)|0x8000, mt_rand(0,0xffff), mt_rand(0,0xffff), mt_rand(0,0xffff)); }
+  private function fakeCurrency() { $currencies = ["USD","EUR","GBP","JPY","VES","BRL","CAD","AUD"]; return $currencies[array_rand($currencies)]; }
   private function fakePrice(): float { return round(mt_rand(100, 100000) / 100, 2); }
-  private function fakeBoolean(): bool { return (bool)rand(0,1); }
-  private function fakeStatus(): string { $statuses = ["active","inactive","pending","archived","deleted"]; return $statuses[array_rand($statuses)]; }
-  private function fakeUrl(): string { $domains = ["example.com","mysite.org","demo.net","shop.io"]; return "https://" . $domains[array_rand($domains)] . "/" . strtolower(preg_replace('/[^a-z0-9]/','',$this->fakeProduct())); }
+  private function fakeBoolean() { return (bool)rand(0,1); }
+  private function fakeStatus() { $statuses = ["active","inactive","pending","archived","deleted"]; return $statuses[array_rand($statuses)]; }
+  private function fakeUrl() { $domains = ["example.com","mysite.org","demo.net","shop.io"]; return "https://" . $domains[array_rand($domains)] . "/" . strtolower(preg_replace('/[^a-z0-9]/','',$this->fakeProduct())); }
   private function fakeAge(): int { $mean = 35; $std = 12; $u = mt_rand()/mt_getrandmax(); $v = mt_rand()/mt_getrandmax(); $z = sqrt(-2*log(max(1e-9,$u))) * cos(2*M_PI*$v); $age = (int)round($mean + $std*$z); return max(18, min(90, $age)); }
 }
